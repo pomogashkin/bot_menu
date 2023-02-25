@@ -1,0 +1,38 @@
+pytz
+python-dotenv
+click==7.0
+
+# Django
+django
+django-cleanup==5.2.0
+django-timezone-field
+django-cors-headers
+pillow==8.2.0
+whitenoise
+
+# Django 3.0 async requirements
+gunicorn==20.1.0
+uvicorn
+uvloop
+httptools
+
+# Databases
+psycopg2-binary
+dj-database-url
+
+# Distributed tasks
+celery==5.0.5
+redis
+django-celery-beat
+
+# Telegram
+python-telegram-bot==13.7
+python-telegram-bot-pagination==0.0.2
+
+# monitoring
+# sentry-sdk
+
+# parsing
+lxml==4.6.3
+requests==2.25.1
+beautifulsoup4==4.9.3
