@@ -43,7 +43,7 @@ def handler_logging(action_name=None):
 
 
 def send_message(user_id, text, parse_mode=None, reply_markup=None, reply_to_message_id=None,
-                 disable_web_page_preview=None, entities=None, tg_token=TELEGRAM_TOKEN):
+                 disable_web_page_preview=None, entities=None, tg_token=TELEGRAM_TOKEN, m_id=None):
     bot = telegram.Bot(tg_token)
     try:
         if entities:
@@ -64,6 +64,7 @@ def send_message(user_id, text, parse_mode=None, reply_markup=None, reply_to_mes
             disable_web_page_preview=disable_web_page_preview,
             entities=entities,
         )
+        m_id = m.message_id
     except telegram.error.Unauthorized:
         print(f"Can't send message to {user_id}. Reason: Bot was stopped.")
         User.objects.filter(user_id=user_id).update(is_blocked_bot=True)
@@ -74,6 +75,8 @@ def send_message(user_id, text, parse_mode=None, reply_markup=None, reply_to_mes
     else:
         success = True
         User.objects.filter(user_id=user_id).update(is_blocked_bot=False)
+    if m_id:
+        return m_id
     return success
 
 

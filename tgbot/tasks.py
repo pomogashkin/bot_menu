@@ -19,32 +19,40 @@ from tgbot.models import (
     User
 )
 from tgbot.poetry import Poetry
+from dtb.settings import TELEGRAM_TOKEN
+
+moders_m_id = []
 
 logger = get_task_logger(__name__)
 
 
 @app.task(name='send_offer', ignore_result=True)
 def send_offer(text, user_id, code):
-    """Рассылка новых стихов пользователям."""
+    """Рассылка модераторам инфы о заказе"""
 
-    # Находим пользователей, которым будем слать стихи
     moders = User.objects.filter(is_moderator=True)
+    global moders_m_id
     for moder in moders:
-        send_message(
+        m = send_message(
             user_id=moder.user_id,
             text=text,
             reply_markup=kb.offer_ready(n_cols=2, user_id=user_id, code=code),
             parse_mode=telegram.ParseMode.MARKDOWN,
         )
+        a = (moder.user_id, m, code)
+        moders_m_id.append(a)
 
 
-def send_ready(text, chat_id, context, update, code):
-    moders = User.objects.filter(is_moderator=True)
-    for moder in moders:
-        context.bot.edit_message_text(
-            text=f'Отлично {code} - готов',
-            chat_id=moder.user_id,
-            message_id=update.callback_query.message.message_id)
+@app.task(name='send_ready', ignore_result=True)
+def send_ready(text, chat_id, context, update, code, token=TELEGRAM_TOKEN):
+    bot = telegram.Bot(token=TELEGRAM_TOKEN)
+    global moders_m_id
+    for element in moders_m_id:
+        if element[2] == code:
+            bot.edit_message_text(
+                text=f'Отлично {code} - готов',
+                chat_id=element[0],
+                message_id=element[1])
 
     send_message(
         user_id=chat_id,

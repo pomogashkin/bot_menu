@@ -51,6 +51,8 @@ def setup_dispatcher(dp):
         hnd.checkout, pattern=f'^{md.CHECKHOUT}'))
     dp.add_handler(CallbackQueryHandler(
         hnd.wait, pattern=f'^{md.WAIT}'))
+    dp.add_handler(CallbackQueryHandler(
+        hnd.delete, pattern=f'^{md.DELETE}'))
 
     # location
     dp.add_handler(CommandHandler("ask_location", location.ask_for_location))

@@ -105,6 +105,36 @@ def product_in_cart(update, context):
     )
 
 
+@handler_logging()
+def delete(update, context):
+    user_id = extract_user_data_from_update(update)['user_id']
+    user = User.get_user(update, context)
+    query = update.callback_query
+    query.answer()
+    query_data = query.data.split('#')
+    print(query_data[1])
+
+    if query_data[1] != 'None':
+        a = ShoppingCart.objects.filter(
+            user=user, product=Product.objects.get(pk=int(query_data[1])))
+        a[0].delete()
+    in_cart = [cart.product for cart in ShoppingCart.objects.filter(
+        user=user)]
+    in_cart = list(set(in_cart))
+
+    context.bot.edit_message_text(
+        text=f'Продукты в корзине: {products_in_card(user)}',
+        chat_id=user_id,
+        message_id=update.callback_query.message.message_id,
+        reply_markup=kb.delete_buttons(
+            products=in_cart,
+            user=user,
+            n_cols=2),
+        parse_mode=telegram.ParseMode.MARKDOWN,
+    )
+
+
+@handler_logging()
 def back_to_menu(update, context):
     user_id = extract_user_data_from_update(update)['user_id']
     user = User.get_user(update, context)
@@ -124,6 +154,7 @@ def back_to_menu(update, context):
     )
 
 
+@handler_logging()
 def checkout(update, context):
     user_id = extract_user_data_from_update(update)['user_id']
     user = User.get_user(update, context)
@@ -140,6 +171,7 @@ def checkout(update, context):
     )
 
 
+@handler_logging()
 def wait(update, context):
     user = User.get_user(update, context)
     user_id = extract_user_data_from_update(update)['user_id']
@@ -162,6 +194,7 @@ def wait(update, context):
     send_offer(text, user_id, code)
 
 
+@handler_logging()
 def ready(update, context):
     query = update.callback_query
     query.answer()
