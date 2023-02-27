@@ -110,18 +110,43 @@ class User(BaseModel):
 class Product(models.Model):
     """Модель Продуктов."""
 
-    cost = models.FloatField(verbose_name='Цена',
-                             max_length=10, validators=[
-                                 MinValueValidator(1)], default=1)
-    category = models.CharField(verbose_name='Категория',
-                                max_length=200)
-    name = models.CharField(verbose_name='Название',
-                            max_length=200, unique=True)
-    amount = models.FloatField(verbose_name='Количество',
-                               max_length=10, validators=[
-                                   MinValueValidator(0.1)], default=1)
+    cost = models.FloatField(
+        verbose_name='Цена',
+        max_length=10,
+        validators=[MinValueValidator(1)],
+        default=250
+    )
+    category = models.CharField(
+        verbose_name='Категория',
+        max_length=200
+    )
+    name = models.CharField(
+        verbose_name='Название',
+        max_length=200
+    )
+    amount = models.FloatField(
+        verbose_name='Количество',
+        max_length=10,
+        validators=[MinValueValidator(0.1)],
+        # default=50,
+        blank=True,
+        null=True
+    )
     measurement_unit = models.CharField(
-        verbose_name='Единица измерения', max_length=200, default='г')
+        verbose_name='Единица измерения',
+        max_length=200,
+        # default='мл',
+        blank=True,
+        null=True
+    )
+    in_stock = models.BooleanField(
+        verbose_name='В наличии',
+        default=True
+    )
+    menu_number = models.PositiveIntegerField(
+        verbose_name='Номер меню',
+        default=2
+    )
 
     class Meta:
         verbose_name = 'Продукт'

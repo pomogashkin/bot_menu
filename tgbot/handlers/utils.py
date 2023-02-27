@@ -58,6 +58,7 @@ def products_in_card(user):
 def send(user_id, media=None, text=None, document=None, img=None, parse_mode=None, reply_markup=None, reply_to_message_id=None,
          disable_web_page_preview=None, entities=None, tg_token=TELEGRAM_TOKEN, m_id=None):
     bot = telegram.Bot(tg_token)
+    m = None
     try:
         if entities:
             entities = [
@@ -95,6 +96,7 @@ def send(user_id, media=None, text=None, document=None, img=None, parse_mode=Non
             )
         if media:
             m = bot.send_media_group(chat_id=user_id, media=media)
+        m_id = m.message_id
     except telegram.error.Unauthorized:
         print(f"Can't send message to {user_id}. Reason: Bot was stopped.")
         User.objects.filter(user_id=user_id).update(is_blocked_bot=True)

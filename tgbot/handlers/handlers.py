@@ -74,7 +74,7 @@ def product_in_cart(update, context):
             user=user,
             category=query_data[1],
             products=products,
-            n_cols=2),
+            n_cols=1),
         parse_mode=telegram.ParseMode.MARKDOWN,
     )
 
@@ -177,6 +177,7 @@ def ready(update, context):
     ShoppingCart.objects.filter(
         user=User.objects.get(user_id=query_data[1])).delete()
 
+    print(query_data)
     text = f'Ваш заказ {query_data[2]} готов!'
     send_ready(
         text, chat_id=query_data[1], update=update, context=context, code=query_data[2])

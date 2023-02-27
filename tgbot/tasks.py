@@ -40,6 +40,7 @@ def send_offer(text, user_id, code):
             parse_mode=telegram.ParseMode.MARKDOWN,
         )
         a = (moder.user_id, m, code)
+        print(a)
         moders_m_id.append(a)
 
 
@@ -47,6 +48,7 @@ def send_offer(text, user_id, code):
 def send_ready(text, chat_id, context, update, code, token=TELEGRAM_TOKEN):
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     global moders_m_id
+    print(moders_m_id)
     for element in moders_m_id:
         if element[2] == code:
             bot.edit_message_text(
@@ -69,8 +71,8 @@ def broadcast_message(user_ids, message, entities=None, sleep_between=0.4, parse
 
     for user_id in user_ids:
         try:
-            send_message(user_id=user_id, text=message,
-                         entities=entities, parse_mode=parse_mode)
+            send(user_id=user_id, text=message,
+                 entities=entities, parse_mode=parse_mode)
             logger.info(f"Broadcast message was sent to {user_id}")
         except Exception as e:
             logger.error(f"Failed to send message to {user_id}, reason: {e}")
