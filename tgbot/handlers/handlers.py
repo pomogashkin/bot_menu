@@ -11,10 +11,9 @@ from tgbot.handlers import commands
 from tgbot.handlers import static_text as st
 from tgbot.handlers import manage_data as md
 from tgbot.handlers import keyboard_utils as kb
-from tgbot.handlers.utils import handler_logging, products_in_card
+from tgbot.handlers.utils import handler_logging, products_in_card, send
 from tgbot.models import User, Product, ShoppingCart
-from tgbot.poetry import Poetry
-from tgbot.tasks import broadcast_message, send_offer, send_ready
+from tgbot.tasks import broadcast_message, send_offer, send_ready, send_menu, send_afisha
 from tgbot.utils import convert_2_user_time, extract_user_data_from_update, get_chat_id
 
 logger = logging.getLogger('default')
@@ -36,44 +35,19 @@ def menu(update, context):
 
 @handler_logging()
 def start_offer(update, context):
-    logger.info('Начинаем процесс добавления в избранное')
+    logger.info('Старт заказа')
     user_id = extract_user_data_from_update(update)['user_id']
     user = User.get_user(update, context)
 
     categories = [product.category for product in Product.objects.all()]
     categories = list(set(categories))
 
-    # Извлекаем ID стиха из колбека
-
-    context.bot.edit_message_text(
-        text='Целое меню',
+    context.bot.send_message(
+        text=st.todays_offer,
         chat_id=user_id,
-        message_id=update.callback_query.message.message_id,
-        reply_markup=kb.build_menu(user=user, categories=categories, n_cols=2),
+        reply_markup=kb.build_menu(user=user, categories=categories, n_cols=1),
         parse_mode=telegram.ParseMode.MARKDOWN,
     )
-
-
-# @handler_logging()
-# def product_offer(update, context):
-#     user_id = extract_user_data_from_update(update)['user_id']
-#     user = User.get_user(update, context)
-
-#     query = update.callback_query
-#     query.answer()
-#     query_data = query.data.split('#')
-#     category = query_data[1]
-#     products = [product for product in Product.objects.filter(
-#         category=category)]
-
-#     context.bot.edit_message_text(
-#         text='Продукты',
-#         chat_id=user_id,
-#         message_id=update.callback_query.message.message_id,
-#         reply_markup=kb.build_menu(
-#             category=category, products=products, n_cols=2),
-#         parse_mode=telegram.ParseMode.MARKDOWN,
-#     )
 
 
 @handler_logging()
@@ -209,74 +183,6 @@ def ready(update, context):
 
 
 @handler_logging()
-def show_authors(update, context):
-    user_id = extract_user_data_from_update(update)['user_id']
-    user = User.get_user(update, context)
-
-    query = update.callback_query
-    query.answer()
-    query_data = query.data.split('#')
-    selected_char = query_data[1]
-
-    poetry = Poetry(user)
-    authors = poetry.get_authors(
-        only_first_chars=False, last_name_first_char=selected_char)
-
-    context.bot.edit_message_text(
-        text=st.choose_author_full,
-        chat_id=user_id,
-        message_id=update.callback_query.message.message_id,
-        reply_markup=kb.make_authors_keyboard(authors),
-        parse_mode=telegram.ParseMode.MARKDOWN,
-    )
-
-
-@handler_logging()
-def show_author_poems(update, context):
-    user_id = extract_user_data_from_update(update)['user_id']
-    user = User.get_user(update, context)
-
-    query = update.callback_query
-    query.answer()
-    query_data = query.data.split('#')
-    author = query_data[1]
-
-    poetry = Poetry(user)
-    poems = poetry.get_poems(author)
-    logger.info(poems)
-
-    context.bot.edit_message_text(
-        text=st.choose_poem,
-        chat_id=user_id,
-        message_id=update.callback_query.message.message_id,
-        reply_markup=kb.make_poems_keyboard(poems),
-        parse_mode=telegram.ParseMode.MARKDOWN,
-    )
-
-
-@handler_logging()
-def show_poem_by_id(update, context):
-    user_id = extract_user_data_from_update(update)['user_id']
-    user = User.get_user(update, context)
-
-    query = update.callback_query
-    query.answer()
-    query_data = query.data.split('#')
-    poem_id = query_data[1]
-
-    poetry = Poetry(user)
-    poem = poetry.get_poem_by_id(poem_id)
-
-    context.bot.edit_message_text(
-        text=poetry.format_poem(poem),
-        chat_id=user_id,
-        message_id=update.callback_query.message.message_id,
-        reply_markup=kb.make_btn_keyboard(),
-        parse_mode=telegram.ParseMode.MARKDOWN,
-    )
-
-
-@handler_logging()
 # callback_data: BUTTON_BACK_IN_PLACE variable from manage_data.py
 def back_to_main_menu_handler(update, context):
     user, created = User.get_user_and_created(update, context)
@@ -291,27 +197,6 @@ def back_to_main_menu_handler(update, context):
         text=text,
         message_id=update.callback_query.message.message_id,
         reply_markup=kb.make_keyboard_for_start_command(),
-        parse_mode=telegram.ParseMode.MARKDOWN
-    )
-
-
-@handler_logging()
-# callback_data: SECRET_LEVEL_BUTTON variable from manage_data.py
-def secret_level(update, context):
-    """ Pressed 'secret_level_button_text' after /start command"""
-    user_id = extract_user_data_from_update(update)['user_id']
-    text = "Congratulations! You've opened a secret room👁‍🗨. There is some information for you:\n" \
-           "*Users*: {user_count}\n" \
-           "*24h active*: {active_24}".format(
-               user_count=User.objects.count(),
-               active_24=User.objects.filter(
-                   updated_at__gte=timezone.now() - datetime.timedelta(hours=24)).count()
-           )
-
-    context.bot.edit_message_text(
-        text=text,
-        chat_id=user_id,
-        message_id=update.callback_query.message.message_id,
         parse_mode=telegram.ParseMode.MARKDOWN
     )
 
@@ -341,3 +226,14 @@ def broadcast_decision_handler(update, context):
         message_id=update.callback_query.message.message_id,
         entities=None if broadcast_decision == md.CONFIRM_BROADCAST else entities
     )
+
+
+def what(update, context):
+    user_id = extract_user_data_from_update(update)['user_id']
+    text = update.message.text
+    if text == st.menu:
+        send_menu(user_id=user_id)
+    if text == st.offer:
+        start_offer(update, context)
+    if text == st.afisha:
+        send_afisha(user_id=user_id)

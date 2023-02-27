@@ -12,8 +12,8 @@ def ask_for_location(update, context):
         chat_id=u.user_id, text=share_location,
         reply_markup=telegram.ReplyKeyboardMarkup([
             [telegram.KeyboardButton(text="Send 🌏🌎🌍", request_location=True)]
-        ], resize_keyboard=True), #'False' will make this button appear on half screen (become very large). Likely,
-        # it will increase click conversion but may decrease UX quality.
+        ], resize_keyboard=True)
+
     )
 
 
@@ -25,4 +25,4 @@ def location_handler(update, context):
     update.message.reply_text(
         thanks_for_location,
         reply_markup=telegram.ReplyKeyboardRemove(),
-    )    
+    )

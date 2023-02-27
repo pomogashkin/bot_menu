@@ -2,12 +2,12 @@
 
 import copy
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 from typing import Iterable
 
 from tgbot.handlers import manage_data as md
 from tgbot.handlers import static_text as st
-from tgbot.models import Favourite, ShoppingCart
+from tgbot.models import ShoppingCart
 
 
 def make_btn_keyboard():
@@ -22,15 +22,12 @@ def make_btn_keyboard():
 
 
 def make_keyboard_for_start_command():
-    buttons = [
-        [
-            InlineKeyboardButton(st.menu, callback_data=f'{md.MENU}'),
-            InlineKeyboardButton(
-                st.offer, callback_data=f'{md.OFFER}'),
-        ]
-    ]
+    buttons = ReplyKeyboardMarkup([
+        [st.menu, st.offer],
+        [st.afisha]
+    ], resize_keyboard=True)
 
-    return InlineKeyboardMarkup(buttons)
+    return buttons
 
 
 def keyboard_confirm_decline_broadcasting():
@@ -40,88 +37,6 @@ def keyboard_confirm_decline_broadcasting():
         InlineKeyboardButton(
             st.decline_broadcast, callback_data=f'{md.CONFIRM_DECLINE_BROADCAST}{md.DECLINE_BROADCAST}')
     ]]
-
-    return InlineKeyboardMarkup(buttons)
-
-
-def make_alphabetical_keyboard(alphabet: [str], selected_char: str = None):
-    """Получает список букв сортированных по алфавиту и делает из них клавиатуру."""
-
-    buttons = []
-    char_index = 0
-    button_row = []
-    for cur_char in alphabet:
-        out_char = f'-{cur_char}-' if cur_char == selected_char else cur_char
-        button_row.append(InlineKeyboardButton(
-            out_char, callback_data=f'{md.AUTHOR_BTN}#{cur_char}'))
-        char_index += 1
-        if char_index % 10 == 0:
-            buttons.append(button_row)
-            button_row = []
-    if button_row:
-        buttons.append(button_row)
-
-    buttons.append([
-        InlineKeyboardButton(
-            st.go_back, callback_data=f'{md.BUTTON_BACK_IN_PLACE}')
-    ])
-
-    return InlineKeyboardMarkup(buttons)
-
-
-def make_authors_keyboard(authors: [str]):
-    """Получает списк авторов и делает из них клавиатуру."""
-
-    buttons = []
-    btn_row = []
-    i = 1
-    for author in authors:
-        callback_key = author
-        label = author if len(author) <= 30 else f'{author[0:27]}...'
-        btn_row.append(InlineKeyboardButton(
-            label, callback_data=f'{md.POEMS_BY_AUTHOR}#{callback_key}'))
-
-        if not i % 3:
-            buttons.append(btn_row)
-            btn_row = []
-
-        i += 1
-    if btn_row:
-        buttons.append(btn_row)
-
-    buttons.append([
-        InlineKeyboardButton(
-            st.go_back, callback_data=f'{md.BUTTON_BACK_IN_PLACE}')
-    ])
-
-    return InlineKeyboardMarkup(buttons)
-
-
-def make_poems_keyboard(favourites: Iterable[Favourite]):
-    """Получает список названий стихов и делает из них клавиатуру."""
-
-    buttons = []
-    btn_row = []
-    i = 1
-    for favourite in favourites:
-        label = favourite.poem.header if len(
-            favourite.poem.header) <= 30 else f'{favourite.poem.header[0:27]}...'
-        callback_key = favourite.poem.id
-        btn_row.append(InlineKeyboardButton(
-            label, callback_data=f'{md.POEM_BY_NAME}#{callback_key}'))
-
-        if not i % 3:
-            buttons.append(btn_row)
-            btn_row = []
-
-        i += 1
-    if btn_row:
-        buttons.append(btn_row)
-
-    buttons.append([
-        InlineKeyboardButton(
-            st.go_back, callback_data=f'{md.BUTTON_BACK_IN_PLACE}')
-    ])
 
     return InlineKeyboardMarkup(buttons)
 

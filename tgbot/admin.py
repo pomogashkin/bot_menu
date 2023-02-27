@@ -9,8 +9,6 @@ from dtb.settings import DEBUG
 from tgbot.models import Location, Arcgis
 from tgbot.models import (
     Config,
-    Favourite,
-    Poem,
     User,
     UserActionLog,
     Product,
@@ -86,16 +84,6 @@ class ConfigAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(Poem)
-class PoemAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(Favourite)
-class FavouriteAdmin(admin.ModelAdmin):
-    pass
-
-
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     """Управление объектами Product в админ-зоне."""
@@ -103,7 +91,9 @@ class ProductAdmin(admin.ModelAdmin):
     list_display = (
         'category',
         'name',
-        'alc',
+        'amount',
+        'cost',
+        'measurement_unit'
     )
     search_fields = ('name',)
     empty_value_display = '-пусто-'

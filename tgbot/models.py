@@ -9,7 +9,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from tgbot import utils
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import MinValueValidator
 
 
 class BaseModel(models.Model):
@@ -98,50 +98,34 @@ class User(BaseModel):
         return cls.objects.filter(username__iexact=username).first()
 
     def invited_users(self):  # --> User queryset
-        return User.objects.filter(deep_link=str(self.user_id), created_at__gt=self.created_at)
+        return User.objects.filter(
+            deep_link=str(self.user_id), created_at__gt=self.created_at
+        )
 
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
 
-class Poem(BaseModel):
-    author = models.CharField(_('Автор'), max_length=1000)
-    header = models.CharField(_('Наименование'), max_length=1000)
-    text = models.TextField(_('Текст стихотворения'))
-
-    def __str__(self):
-        return f'{self.author} "{self.header}"'
-
-    class Meta:
-        verbose_name = 'Стих'
-        verbose_name_plural = 'Стихи'
-        ordering = ['author', 'header']
-
-
-class Favourite(BaseModel):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='users')
-    poem = models.ForeignKey(Poem, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f'{self.user} - {self.poem}'
-
-
 class Product(models.Model):
     """Модель Продуктов."""
 
-    cost = models.FloatField(max_length=10, validators=[
-                             MinValueValidator(1)], default=1)
+    cost = models.FloatField(verbose_name='Цена',
+                             max_length=10, validators=[
+                                 MinValueValidator(1)], default=1)
     category = models.CharField(verbose_name='Категория',
                                 max_length=200)
     name = models.CharField(verbose_name='Название',
                             max_length=200, unique=True)
-    alc = models.BooleanField(verbose_name='Алкоголь')
+    amount = models.FloatField(verbose_name='Количество',
+                               max_length=10, validators=[
+                                   MinValueValidator(0.1)], default=1)
+    measurement_unit = models.CharField(
+        verbose_name='Единица измерения', max_length=200, default='г')
 
     class Meta:
-        verbose_name = 'Product'
-        verbose_name_plural = 'Product'
+        verbose_name = 'Продукт'
+        verbose_name_plural = 'Продукты'
 
     def __str__(self):
         """Unicode representation of Product."""

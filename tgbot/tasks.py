@@ -12,14 +12,14 @@ from dtb.celery import app
 from celery.utils.log import get_task_logger
 
 from tgbot.handlers import keyboard_utils as kb
-from tgbot.handlers.utils import send_message
+from tgbot.handlers import static_text as st
+from tgbot.handlers.utils import send
 from tgbot.models import (
     Arcgis,
-    Poem,
     User
 )
-from tgbot.poetry import Poetry
 from dtb.settings import TELEGRAM_TOKEN
+import tgbot.handlers.manage_data as md
 
 moders_m_id = []
 
@@ -33,7 +33,7 @@ def send_offer(text, user_id, code):
     moders = User.objects.filter(is_moderator=True)
     global moders_m_id
     for moder in moders:
-        m = send_message(
+        m = send(
             user_id=moder.user_id,
             text=text,
             reply_markup=kb.offer_ready(n_cols=2, user_id=user_id, code=code),
@@ -54,7 +54,7 @@ def send_ready(text, chat_id, context, update, code, token=TELEGRAM_TOKEN):
                 chat_id=element[0],
                 message_id=element[1])
 
-    send_message(
+    send(
         user_id=chat_id,
         text=text,
         reply_markup=kb.thanks(n_cols=2),
@@ -83,3 +83,24 @@ def broadcast_message(user_ids, message, entities=None, sleep_between=0.4, parse
 def save_data_from_arcgis(latitude, longitude, location_id):
     Arcgis.from_json(Arcgis.reverse_geocode(
         latitude, longitude), location_id=location_id)
+
+
+@app.task(ignore_result=True)
+def send_menu(user_id):
+    media = []
+    menu_list = [md.MENU_IMG_1, md.MENU_IMG_2]
+    for number, file_id in enumerate(menu_list):
+        media.append(telegram.InputMediaPhoto(
+            media=file_id, caption="Афиша №" + str(number + 1)))
+
+    send(user_id=user_id, media=media)
+
+
+@app.task(ignore_result=True)
+def send_afisha(user_id):
+    media = []
+    for number, file_id in enumerate(md.AFISHA):
+        media.append(telegram.InputMediaPhoto(
+            media=file_id, caption="Меню №" + str(number + 1)))
+
+    send(user_id=user_id, media=media)

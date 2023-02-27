@@ -32,12 +32,25 @@ def setup_dispatcher(dp):
     # admin commands
     dp.add_handler(CommandHandler("admin", admin.admin))
     dp.add_handler(CommandHandler("stats", admin.stats))
+    dp.add_handler(
+        CommandHandler(
+            "become_an_admin",
+            commands.command_go
+        )
+    )
+    dp.add_handler(
+        CommandHandler(
+            "view_products",
+            commands.view_products
+        )
+    )
 
     dp.add_handler(MessageHandler(
         Filters.animation, files.show_file_id,
     ))
 
     # base buttons
+
     dp.add_handler(CallbackQueryHandler(hnd.menu, pattern=f'^{md.MENU}'))
     dp.add_handler(CallbackQueryHandler(
         hnd.start_offer, pattern=f'^{md.OFFER}'))
@@ -53,18 +66,22 @@ def setup_dispatcher(dp):
         hnd.wait, pattern=f'^{md.WAIT}'))
     dp.add_handler(CallbackQueryHandler(
         hnd.delete, pattern=f'^{md.DELETE}'))
+    dp.add_handler(MessageHandler(Filters.text, hnd.what))
 
     # location
     dp.add_handler(CommandHandler("ask_location", location.ask_for_location))
     dp.add_handler(MessageHandler(Filters.location, location.location_handler))
 
-    dp.add_handler(CallbackQueryHandler(hnd.secret_level,
-                   pattern=f"^{md.SECRET_LEVEL_BUTTON}"))
-
     dp.add_handler(MessageHandler(Filters.regex(
         rf'^{broadcast_command} .*'), broadcast_command_with_message))
     dp.add_handler(CallbackQueryHandler(
         hnd.broadcast_decision_handler, pattern=f"^{md.CONFIRM_DECLINE_BROADCAST}"))
+    dp.add_handler(MessageHandler(
+        Filters.document, files.show_file_id,
+    ))
+    dp.add_handler(MessageHandler(
+        Filters.photo, files.show_file_id,
+    ))
 
     # EXAMPLES FOR HANDLERS
     # dp.add_handler(MessageHandler(Filters.text, <function_handler>))

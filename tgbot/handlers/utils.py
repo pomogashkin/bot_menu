@@ -8,7 +8,6 @@ from dtb.settings import ENABLE_DECORATOR_LOGGING, TELEGRAM_TOKEN
 from django.utils import timezone
 from tgbot.models import UserActionLog, User, ShoppingCart
 from telegram import MessageEntity
-from django.db.models import Sum
 
 logger = logging.getLogger('default')
 
@@ -42,8 +41,22 @@ def handler_logging(action_name=None):
     return decor
 
 
-def send_message(user_id, text, parse_mode=None, reply_markup=None, reply_to_message_id=None,
-                 disable_web_page_preview=None, entities=None, tg_token=TELEGRAM_TOKEN, m_id=None):
+def products_in_card(user):
+    offer = ''
+    shopping_cart = ShoppingCart.objects.filter(
+        user=user)
+    in_cart = [cart.product.name for cart in shopping_cart]
+    counter = Counter(in_cart)
+    for product, count in counter.items():
+        offer += '•' + ' ' + product + ' - ' + f'{count}x' + os.linesep
+    offer += (
+        f'Сумма заказа: {sum(cart.product.cost for cart in shopping_cart)}р'
+    )
+    return os.linesep + offer
+
+
+def send(user_id, media=None, text=None, document=None, img=None, parse_mode=None, reply_markup=None, reply_to_message_id=None,
+         disable_web_page_preview=None, entities=None, tg_token=TELEGRAM_TOKEN, m_id=None):
     bot = telegram.Bot(tg_token)
     try:
         if entities:
@@ -54,17 +67,34 @@ def send_message(user_id, text, parse_mode=None, reply_markup=None, reply_to_mes
                               )
                 for entity in entities
             ]
-
-        m = bot.send_message(
-            chat_id=user_id,
-            text=text,
-            parse_mode=parse_mode,
-            reply_markup=reply_markup,
-            reply_to_message_id=reply_to_message_id,
-            disable_web_page_preview=disable_web_page_preview,
-            entities=entities,
-        )
-        m_id = m.message_id
+        if img:
+            m = bot.send_photo(
+                chat_id=user_id,
+                photo=img,
+                parse_mode=parse_mode,
+                reply_markup=reply_markup,
+                reply_to_message_id=reply_to_message_id,
+            )
+        if document:
+            m = bot.send_document(
+                chat_id=user_id,
+                document=document,
+                parse_mode=parse_mode,
+                reply_markup=reply_markup,
+                reply_to_message_id=reply_to_message_id,
+            )
+        if text:
+            m = bot.send_message(
+                chat_id=user_id,
+                text=text,
+                parse_mode=parse_mode,
+                reply_markup=reply_markup,
+                reply_to_message_id=reply_to_message_id,
+                disable_web_page_preview=disable_web_page_preview,
+                entities=entities,
+            )
+        if media:
+            m = bot.send_media_group(chat_id=user_id, media=media)
     except telegram.error.Unauthorized:
         print(f"Can't send message to {user_id}. Reason: Bot was stopped.")
         User.objects.filter(user_id=user_id).update(is_blocked_bot=True)
@@ -78,17 +108,3 @@ def send_message(user_id, text, parse_mode=None, reply_markup=None, reply_to_mes
     if m_id:
         return m_id
     return success
-
-
-def products_in_card(user):
-    offer = ''
-    shopping_cart = ShoppingCart.objects.filter(
-        user=user)
-    in_cart = [cart.product.name for cart in shopping_cart]
-    counter = Counter(in_cart)
-    for product, count in counter.items():
-        offer += '•' + ' ' + product + ' - ' + f'{count}x' + os.linesep
-    offer += (
-        f'Сумма заказа: {sum(cart.product.cost for cart in shopping_cart)}р'
-    )
-    return os.linesep + offer

@@ -4,15 +4,17 @@ import datetime
 import logging
 import re
 import telegram
+import os
 
 from django.utils import timezone
 from tgbot.handlers import static_text
-from tgbot.models import User
+from tgbot.models import User, Product
 from tgbot.utils import extract_user_data_from_update
 from tgbot.handlers import static_text as st
+from tgbot.handlers import manage_data as md
 from tgbot.handlers.keyboard_utils import make_keyboard_for_start_command, keyboard_confirm_decline_broadcasting
-from tgbot.handlers.utils import handler_logging
-from tgbot.poetry import Poetry
+from tgbot.handlers.utils import handler_logging, send
+from django.db.models import Q
 
 logger = logging.getLogger('default')
 logger.info("Command handlers check!")
@@ -22,7 +24,8 @@ logger.info("Command handlers check!")
 def command_start(update, context):
     user, created = User.get_user_and_created(update, context)
 
-    payload = context.args[0] if context.args else user.deep_link  # if empty payload, check what was stored in DB
+    # if empty payload, check what was stored in DB
+    payload = context.args[0] if context.args else user.deep_link
 
     text = f'{st.welcome}'
 
@@ -33,6 +36,35 @@ def command_start(update, context):
         reply_markup=make_keyboard_for_start_command(),
         parse_mode=telegram.ParseMode.MARKDOWN
     )
+
+
+@handler_logging()
+def command_go(update, context):
+    user_id = extract_user_data_from_update(update)['user_id']
+    if context.args[0] == md.PASSWORD_ADMIN:
+        User.objects.filter(user_id=user_id).update(is_admin=True)
+        send(user_id=user_id, text='Теперь вы Администратор')
+    if context.args[0] == md.PASSWORD_MODER:
+        User.objects.filter(user_id=user_id).update(is_moderator=True)
+        send(user_id=user_id, text='Теперь вы Модератор')
+
+
+@handler_logging()
+def view_products(update, context):
+    print('go')
+    user_id = extract_user_data_from_update(update)['user_id']
+    products = ''
+    if User.objects.filter(
+        Q(is_admin=True) | Q(is_moderator=True), user_id=user_id
+    ).exists():
+        for product in Product.objects.all():
+            products += (
+                '•' +
+                f' {product.name} {product.amount}' +
+                f'{product.measurement_unit} - {product.cost}р' +
+                f' (id:{product.pk})' + os.linesep
+            )
+        send(user_id=user_id, text=products)
 
 
 def stats(update, context):
