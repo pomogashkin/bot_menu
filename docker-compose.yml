@@ -34,9 +34,7 @@ services:
   bot:
     image: pomogashkin/bot_menu_web:latest
     container_name: tg_bot_menu
-    command: python run_pooling.py
-    volumes:
-      - .:/code
+    command: python3 run_pooling.py
     env_file:
       - ./.env
     depends_on:
@@ -67,7 +65,7 @@ services:
   #   command: certonly --webroot webroot-path=/var/www/html --email noskovdaniks@gmail.com --agree-tos --no-eff-email -d etoelectrobus.online
 
   celery:
-    image: pomogashkin/bot_menu_web:latest
+    build: .
     container_name: celery_menu
     command: celery -A dtb worker --loglevel=INFO
     volumes:
@@ -77,8 +75,9 @@ services:
     depends_on:
       - redis
       - web
+
   celery-beat:
-    image: pomogashkin/bot_menu_web:latest
+    build: .
     container_name: celery_beat_menu
     command: celery -A dtb beat --loglevel=INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
     volumes:
