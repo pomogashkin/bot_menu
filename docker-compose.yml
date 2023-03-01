@@ -18,7 +18,7 @@ services:
     container_name: redis_menu
 
   web:
-    build: .
+    image: pomogashkin/bot_menu_web:latest
     container_name: django_menu
     volumes:
       - static_value:/code/static/
