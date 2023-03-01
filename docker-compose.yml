@@ -60,11 +60,11 @@ services:
     image: cerbot/cerbot
     depends_on:
       - nginx
-      container_name: cerbot
-      volumes:
+    container_name: cerbot
+    volumes:
       - etc-letsencrypt:/etc/letsencrypt
       - www-html:/var/www/html
-      command: certonly --webroot webroot-path=/var/www/html --email noskovdaniks@gmail.com --agree-tos --no-eff-email -d etoelectrobus.online
+    command: certonly --webroot webroot-path=/var/www/html --email noskovdaniks@gmail.com --agree-tos --no-eff-email -d etoelectrobus.online
 
   celery:
     build: .
