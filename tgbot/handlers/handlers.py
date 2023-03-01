@@ -38,14 +38,20 @@ def start_offer(update, context):
     logger.info('Старт заказа')
     user_id = extract_user_data_from_update(update)['user_id']
     user = User.get_user(update, context)
+    text = ''
 
     categories = [product.category for product in Product.objects.all()]
     categories = list(set(categories))
 
-    context.bot.send_message(
-        text=st.todays_offer,
-        chat_id=user_id,
-        reply_markup=kb.build_menu(user=user, categories=categories, n_cols=1),
+    if ShoppingCart.objects.filter(user=user).exists():
+        text = f'Продукты в корзине: {products_in_card(user)}'
+    else:
+        text = st.todays_offer
+    send(
+        text=text,
+        user_id=user_id,
+        reply_markup=kb.build_menu(user=user, categories=categories,
+                                   n_cols=2),
         parse_mode=telegram.ParseMode.MARKDOWN,
     )
 
@@ -63,8 +69,6 @@ def product_in_cart(update, context):
             user=user, product=Product.objects.get(pk=query_data[2]))
     products = [product for product in Product.objects.filter(
         category=query_data[1])]
-    in_cart = [cart.product.name for cart in ShoppingCart.objects.filter(
-        user=user)]
 
     context.bot.edit_message_text(
         text=f'Продукты в корзине: {products_in_card(user)}',
@@ -86,7 +90,6 @@ def delete(update, context):
     query = update.callback_query
     query.answer()
     query_data = query.data.split('#')
-    print(query_data[1])
 
     if query_data[1] != 'None':
         a = ShoppingCart.objects.filter(
@@ -97,7 +100,8 @@ def delete(update, context):
     in_cart = list(set(in_cart))
 
     context.bot.edit_message_text(
-        text=f'Продукты в корзине: {products_in_card(user)}',
+        text=('Чтобы удалить продукт, нажмите на него,' + os.linesep +
+              f' Продукты в корзине: {products_in_card(user)}'),
         chat_id=user_id,
         message_id=update.callback_query.message.message_id,
         reply_markup=kb.delete_buttons(
@@ -133,16 +137,22 @@ def checkout(update, context):
     user_id = extract_user_data_from_update(update)['user_id']
     user = User.get_user(update, context)
 
-    in_cart = [cart.product.name for cart in ShoppingCart.objects.filter(
-        user=user)]
-
-    context.bot.edit_message_text(
-        text=f'Продукты в корзине: {products_in_card(user)}',
-        chat_id=user_id,
-        message_id=update.callback_query.message.message_id,
-        reply_markup=kb.checkout_buttons(n_cols=2),
-        parse_mode=telegram.ParseMode.MARKDOWN,
-    )
+    if user.is_wait:
+        context.bot.edit_message_text(
+            text=st.is_wait.format(user.code),
+            chat_id=user_id,
+            message_id=update.callback_query.message.message_id,
+            parse_mode=telegram.ParseMode.MARKDOWN,
+        )
+    else:
+        context.bot.edit_message_text(
+            text=f'Продукты в корзине: {products_in_card(user)}',
+            chat_id=user_id,
+            message_id=update.callback_query.message.message_id,
+            reply_markup=kb.checkout_buttons(n_cols=2),
+            parse_mode=telegram.ParseMode.MARKDOWN,
+        )
+        User.objects.filter(user_id=user_id).update(is_wait=True)
 
 
 @handler_logging()
@@ -151,9 +161,7 @@ def wait(update, context):
     user_id = extract_user_data_from_update(update)['user_id']
     numbers = [random.randint(0, 9) for i in range(4)]
     code = ''.join(str(number) for number in numbers)
-    text = (f'Номер заказа: {code}' + os.linesep +
-            f'Посетитель: {user}' + os.linesep +
-            f'Заказ: {products_in_card(user)}' + os.linesep)
+    text = st.new_offer.format(code, user, products_in_card(user))
 
     context.bot.edit_message_text(
         text=(
@@ -164,6 +172,7 @@ def wait(update, context):
         # reply_markup=kb.checkout_buttons(n_cols=2),
         parse_mode=telegram.ParseMode.MARKDOWN,
     )
+    User.objects.filter(user_id=user_id).update(code=int(code))
 
     send_offer(text, user_id, code)
 
@@ -174,10 +183,9 @@ def ready(update, context):
     query.answer()
     query_data = query.data.split('#')
 
-    ShoppingCart.objects.filter(
-        user=User.objects.get(user_id=query_data[1])).delete()
+    User.objects.filter(user_id=int(query_data[1])).update(
+        code=None, is_wait=False)
 
-    print(query_data)
     text = f'Ваш заказ {query_data[2]} готов!'
     send_ready(
         text, chat_id=query_data[1], update=update, context=context, code=query_data[2])

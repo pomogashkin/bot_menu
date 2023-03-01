@@ -9,7 +9,6 @@ COPY requirements.txt /code/
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 COPY . /code/
+
+CMD ["gunicorn", "dtb.wsgi:application", "--bind", "0:8000" ]

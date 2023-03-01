@@ -5,9 +5,12 @@
 import datetime
 import telegram
 import time
+import os
 
 from django.db.models import Q
 from django.utils import timezone
+from tgbot.models import ShoppingCart
+from tgbot.handlers.utils import products_in_card
 from dtb.celery import app
 from celery.utils.log import get_task_logger
 
@@ -40,22 +43,26 @@ def send_offer(text, user_id, code):
             parse_mode=telegram.ParseMode.MARKDOWN,
         )
         a = (moder.user_id, m, code)
+        if a[1] is not False:
+            moders_m_id.append(a)
         print(a)
-        moders_m_id.append(a)
 
 
 @app.task(name='send_ready', ignore_result=True)
 def send_ready(text, chat_id, context, update, code, token=TELEGRAM_TOKEN):
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     global moders_m_id
-    print(moders_m_id)
+    user = User.objects.get(
+        user_id=chat_id)
     for element in moders_m_id:
         if element[2] == code:
             bot.edit_message_text(
-                text=f'Отлично {code} - готов',
+                text=st.offer_ready.format(code, user, products_in_card(user)),
                 chat_id=element[0],
                 message_id=element[1])
-
+    ShoppingCart.objects.filter(
+        user=User.objects.get(user_id=chat_id)).delete()
+    moders_m_id = []
     send(
         user_id=chat_id,
         text=text,

@@ -71,9 +71,9 @@ def build_menu(
         menu.append([InlineKeyboardButton('К началу меню',
                      callback_data=md.BACK_TO_MENU)])
     if ShoppingCart.objects.filter(user=user).exists():
-        menu.append([InlineKeyboardButton('Оформить заказ',
-                                          callback_data=f'{md.CHECKHOUT}'),
-                     InlineKeyboardButton('Удалить',
+        menu.append([InlineKeyboardButton('ОФОРМИТЬ ЗАКАЗ',
+                                          callback_data=f'{md.CHECKHOUT}')])
+        menu.append([InlineKeyboardButton('УДАЛИТЬ ПРОДУКТЫ ИЗ КОРЗИНЫ',
                                           callback_data=f'{md.DELETE}#None')])
     if header_buttons:
         menu.insert(0, [header_buttons])
@@ -92,7 +92,7 @@ def delete_buttons(n_cols, products, user):
     ]
 
     menu = [buttons[i:i + n_cols] for i in range(0, len(buttons), n_cols)]
-    menu.append([InlineKeyboardButton('К началу меню',
+    menu.append([InlineKeyboardButton('В НАЧАЛО МЕНЮ',
                                       callback_data=md.BACK_TO_MENU)])
     if ShoppingCart.objects.filter(user=user).exists():
         menu.append([InlineKeyboardButton('Оформить заказ',
@@ -101,7 +101,7 @@ def delete_buttons(n_cols, products, user):
 
 
 def checkout_buttons(n_cols):
-    buttons = [InlineKeyboardButton('К началу меню',
+    buttons = [InlineKeyboardButton('В начало меню',
                                     callback_data=md.BACK_TO_MENU),
                InlineKeyboardButton('Оформить заказ',
                                     callback_data=md.WAIT)]

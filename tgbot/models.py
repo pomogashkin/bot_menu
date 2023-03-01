@@ -54,6 +54,8 @@ class User(BaseModel):
     deep_link = models.CharField(max_length=64, null=True, blank=True)
 
     is_blocked_bot = models.BooleanField(default=False)
+    is_wait = models.BooleanField(default=False)
+    code = models.PositiveIntegerField(null=True, blank=True)
     is_banned = models.BooleanField(default=False)
 
     is_admin = models.BooleanField(default=False)

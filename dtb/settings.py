@@ -22,7 +22,7 @@ SECRET_KEY = os.getenv(
 
 DEBUG = not not os.getenv("DJANGO_DEBUG", False)
 
-ALLOWED_HOSTS = ["*",]  # since Telegram uses a lot of IPs for webhooks
+ALLOWED_HOSTS = ["*"]  # since Telegram uses a lot of IPs for webhooks
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
@@ -144,13 +144,16 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 WEB_DOMAIN = os.getenv("WEB_DOMAIN")
 MEDIA_DOMAIN = os.getenv("MEDIA_DOMAIN")
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-MEDIA_URL = '/media/'
+
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-STATIC_URL = '/staticfiles/'
-# STATIC_ROOT = os.path.join(PROJECT_ROOT, 'static')
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_URL = '/static/'
+# STATICFILES_DIRS необходимо закомментировать или удалить
+# STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static/'),)
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
 # -----> CELERY
