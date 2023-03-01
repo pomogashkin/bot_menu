@@ -1,4 +1,4 @@
-version: "3.8"
+version: '3.3'
 
 services:
   db:
@@ -32,7 +32,7 @@ services:
       - redis
 
   bot:
-    build: .
+    image: pomogashkin/bot_menu_web:latest
     container_name: tg_bot_menu
     command: python run_pooling.py
     volumes:
@@ -53,21 +53,21 @@ services:
       - static_value:/var/html/static/
       - media_value:/var/html/media/
     depends_on:
-      - bot
+      - web
     restart: always
 
-  cerbot:
-    image: cerbot/cerbot
-    depends_on:
-      - nginx
-    container_name: cerbot
-    volumes:
-      - etc-letsencrypt:/etc/letsencrypt
-      - www-html:/var/www/html
-    command: certonly --webroot webroot-path=/var/www/html --email noskovdaniks@gmail.com --agree-tos --no-eff-email -d etoelectrobus.online
+  # certbot:
+  #   image: certbot/certbot
+  #   depends_on:
+  #     - nginx
+  #   container_name: certbot
+  #   volumes:
+  #     - etc-letsencrypt:/etc/letsencrypt
+  #     - www-html:/var/www/html
+  #   command: certonly --webroot webroot-path=/var/www/html --email noskovdaniks@gmail.com --agree-tos --no-eff-email -d etoelectrobus.online
 
   celery:
-    build: .
+    image: pomogashkin/bot_menu_web:latest
     container_name: celery_menu
     command: celery -A dtb worker --loglevel=INFO
     volumes:
@@ -78,7 +78,7 @@ services:
       - redis
       - web
   celery-beat:
-    build: .
+    image: pomogashkin/bot_menu_web:latest
     container_name: celery_beat_menu
     command: celery -A dtb beat --loglevel=INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
     volumes:
