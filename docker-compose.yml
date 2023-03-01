@@ -65,11 +65,9 @@ services:
   #   command: certonly --webroot webroot-path=/var/www/html --email noskovdaniks@gmail.com --agree-tos --no-eff-email -d etoelectrobus.online
 
   celery:
-    build: .
+    image: pomogashkin/bot_menu_web:latest
     container_name: celery_menu
     command: celery -A dtb worker --loglevel=INFO
-    volumes:
-      - .:/code
     env_file:
       - ./.env
     depends_on:
@@ -77,11 +75,9 @@ services:
       - web
 
   celery-beat:
-    build: .
+    image: pomogashkin/bot_menu_web:latest
     container_name: celery_beat_menu
     command: celery -A dtb beat --loglevel=INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
-    volumes:
-      - .:/code
     env_file:
       - ./.env
     depends_on:
