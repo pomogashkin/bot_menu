@@ -9,6 +9,7 @@ from telegram.ext import (
     CommandHandler, MessageHandler,
     InlineQueryHandler, CallbackQueryHandler,
     ChosenInlineResultHandler, PollAnswerHandler,
+    PreCheckoutQueryHandler, filters
 )
 
 from celery.decorators import task  # event processing in async mode
@@ -49,8 +50,7 @@ def setup_dispatcher(dp):
         Filters.animation, files.show_file_id,
     ))
 
-    # base buttons
-
+    dp.add_handler(PreCheckoutQueryHandler(hnd.precheckout))
     dp.add_handler(CallbackQueryHandler(hnd.menu, pattern=f'^{md.MENU}'))
     dp.add_handler(CallbackQueryHandler(
         hnd.start_offer, pattern=f'^{md.OFFER}'))
@@ -61,7 +61,9 @@ def setup_dispatcher(dp):
     dp.add_handler(CallbackQueryHandler(
         hnd.back_to_menu, pattern=f'^{md.BACK_TO_MENU}'))
     dp.add_handler(CallbackQueryHandler(
-        hnd.checkout, pattern=f'^{md.CHECKHOUT}'))
+        hnd.pay, pattern=f'^{md.CHECKHOUT}'))
+    dp.add_handler(CallbackQueryHandler(
+        hnd.pay, pattern=f'^{md.PAY}'))
     dp.add_handler(CallbackQueryHandler(
         hnd.wait, pattern=f'^{md.WAIT}'))
     dp.add_handler(CallbackQueryHandler(
@@ -82,6 +84,10 @@ def setup_dispatcher(dp):
     dp.add_handler(MessageHandler(
         Filters.photo, files.show_file_id,
     ))
+    dp.add_handler(
+        MessageHandler(Filters.successful_payment,
+                       hnd.wait)
+    )
 
     # EXAMPLES FOR HANDLERS
     # dp.add_handler(MessageHandler(Filters.text, <function_handler>))

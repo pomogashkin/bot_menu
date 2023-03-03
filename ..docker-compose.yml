@@ -1,0 +1,93 @@
+version: '3.3'
+
+services:
+  db:
+    image: postgres:13.0-alpine
+    container_name: postgres_db_menu
+    restart: always
+    volumes:
+      - db_value:/var/lib/postgresql/data/
+      - ./sql:/sql/
+    env_file:
+      - ./.env
+    ports:
+      - 5434:5432
+
+  redis:
+    image: redis:alpine
+    container_name: redis_menu
+
+  web:
+    build: .
+    container_name: django_menu
+    volumes:
+      - static_value:/code/static/
+      - media_value:/code/media/
+    ports:
+      - 8000:8000
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+      - redis
+
+  bot:
+    build: .
+    container_name: tg_bot_menu
+    command: python3 run_pooling.py
+    env_file:
+      - ./.env
+    depends_on:
+      - web
+
+  nginx:
+    image: nginx:1.19.3
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - www-html:/var/www/html
+      - etc-letsencrypt:/etc/letsencrypt
+      - static_value:/var/html/static/
+      - media_value:/var/html/media/
+    depends_on:
+      - web
+    restart: always
+
+  # certbot:
+  #   image: certbot/certbot
+  #   depends_on:
+  #     - nginx
+  #   container_name: certbot
+  #   volumes:
+  #     - etc-letsencrypt:/etc/letsencrypt
+  #     - www-html:/var/www/html
+  #   command: certonly --webroot webroot-path=/var/www/html --email noskovdaniks@gmail.com --agree-tos --no-eff-email -d etoelectrobus.online
+
+  celery:
+    build: .
+    container_name: celery_menu
+    command: celery -A dtb worker --loglevel=INFO
+    env_file:
+      - ./.env
+    depends_on:
+      - redis
+      - web
+
+  celery-beat:
+    build: .
+    container_name: celery_beat_menu
+    command: celery -A dtb beat --loglevel=INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file:
+      - ./.env
+    depends_on:
+      - redis
+      - celery
+      - web
+
+volumes:
+  db_value:
+  static_value:
+  media_value:
+  etc-letsencrypt:
+  www-html:

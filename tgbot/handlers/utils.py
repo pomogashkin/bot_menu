@@ -19,7 +19,7 @@ def send_typing_action(func):
     def command_func(update, context, *args, **kwargs):
         context.bot.send_chat_action(
             chat_id=update.effective_message.chat_id, action=telegram.ChatAction.TYPING)
-        return func(update, context,  *args, **kwargs)
+        return func(update, context, *args, **kwargs)
 
     return command_func
 
@@ -41,7 +41,7 @@ def handler_logging(action_name=None):
     return decor
 
 
-def products_in_card(user):
+def products_in_card(user, without_cost=False):
     offer = ''
     shopping_cart = ShoppingCart.objects.filter(
         user=user)
@@ -49,6 +49,8 @@ def products_in_card(user):
     counter = Counter(in_cart)
     for product, count in counter.items():
         offer += '•' + ' ' + product + ' - ' + f'{count}x' + os.linesep
+    if without_cost:
+        return os.linesep + offer
     offer += (
         f'Сумма заказа: {sum(cart.product.cost for cart in shopping_cart)}р'
     )

@@ -170,6 +170,7 @@ CELERY_TASK_DEFAULT_QUEUE = 'default'
 
 # -----> TELEGRAM
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+BANK_TOKEN = os.getenv("BANK_TOKEN")
 
 
 # -----> LOGGING

@@ -13,7 +13,8 @@ from tgbot.handlers import manage_data as md
 from tgbot.handlers import keyboard_utils as kb
 from tgbot.handlers.utils import handler_logging, products_in_card, send
 from tgbot.models import User, Product, ShoppingCart
-from tgbot.tasks import broadcast_message, send_offer, send_ready, send_menu, send_afisha
+from tgbot.tasks import (broadcast_message, send_offer, send_ready,
+                         send_menu, send_afisha, send_pay, pre_checkout_query)
 from tgbot.utils import convert_2_user_time, extract_user_data_from_update, get_chat_id
 
 logger = logging.getLogger('default')
@@ -100,8 +101,8 @@ def delete(update, context):
     in_cart = list(set(in_cart))
 
     context.bot.edit_message_text(
-        text=('Чтобы удалить продукт, нажмите на него,' + os.linesep +
-              f' Продукты в корзине: {products_in_card(user)}'),
+        text=('Чтобы удалить продукт, нажмите на него,' + os.linesep
+              + f' Продукты в корзине: {products_in_card(user)}'),
         chat_id=user_id,
         message_id=update.callback_query.message.message_id,
         reply_markup=kb.delete_buttons(
@@ -114,34 +115,25 @@ def delete(update, context):
 
 @handler_logging()
 def back_to_menu(update, context):
+
     user_id = extract_user_data_from_update(update)['user_id']
     user = User.get_user(update, context)
 
     categories = [product.category for product in Product.objects.all()]
     categories = list(set(categories))
 
-    in_cart = [cart.product.name for cart in ShoppingCart.objects.filter(
-        user=user)]
-
-    context.bot.edit_message_text(
-        text=f'Продукты в корзине: {products_in_card(user)}',
-        chat_id=user_id,
-        message_id=update.callback_query.message.message_id,
-        reply_markup=kb.build_menu(user=user, categories=categories, n_cols=2),
-        parse_mode=telegram.ParseMode.MARKDOWN,
-    )
-
-
-@handler_logging()
-def checkout(update, context):
-    user_id = extract_user_data_from_update(update)['user_id']
-    user = User.get_user(update, context)
-
-    if user.is_wait:
-        context.bot.edit_message_text(
-            text=st.is_wait.format(user.code),
-            chat_id=user_id,
-            message_id=update.callback_query.message.message_id,
+    query = update.callback_query
+    query.answer()
+    query_data = query.data.split('#')
+    print('oh hi')
+    if query_data[1] == 'delete':
+        update.callback_query.delete_message(
+        )
+        send(
+            text=f'Продукты в корзине: {products_in_card(user)}',
+            user_id=user_id,
+            reply_markup=kb.build_menu(
+                user=user, categories=categories, n_cols=2),
             parse_mode=telegram.ParseMode.MARKDOWN,
         )
     else:
@@ -149,26 +141,103 @@ def checkout(update, context):
             text=f'Продукты в корзине: {products_in_card(user)}',
             chat_id=user_id,
             message_id=update.callback_query.message.message_id,
-            reply_markup=kb.checkout_buttons(n_cols=2),
+            reply_markup=kb.build_menu(
+                user=user, categories=categories, n_cols=2),
             parse_mode=telegram.ParseMode.MARKDOWN,
         )
-        User.objects.filter(user_id=user_id).update(is_wait=True)
+
+
+# @handler_logging()
+# def checkout(update, context):
+#     user_id = extract_user_data_from_update(update)['user_id']
+#     user = User.get_user(update, context)
+
+#     if user.is_wait:
+#         context.bot.edit_message_text(
+#             text=st.is_wait.format(user.code),
+#             chat_id=user_id,
+#             message_id=update.callback_query.message.message_id,
+#             parse_mode=telegram.ParseMode.MARKDOWN,
+#         )
+#     else:
+#         context.bot.edit_message_text(
+#             text=f'Продукты в корзине: {products_in_card(user)}',
+#             chat_id=user_id,
+#             message_id=update.callback_query.message.message_id,
+#             reply_markup=kb.checkout_buttons(n_cols=2),
+#             parse_mode=telegram.ParseMode.MARKDOWN,
+#         )
+#         User.objects.filter(user_id=user_id).update(is_wait=True)
+
+
+@handler_logging()
+def pay(update, context):
+    print('goo')
+    chat_id = extract_user_data_from_update(update)['user_id']
+    user = User.get_user(update, context)
+    title = 'Оплата вашего заказа'
+    description = f'Ваш заказ: {products_in_card(user, without_cost=True)}'
+    payload = "Custom-Payload"
+    currency = 'RUB'
+    sum_cost = 0
+    shopping_cart = ShoppingCart.objects.filter(user=user)
+    for product in shopping_cart:
+        sum_cost += int(product.product.cost)
+    prices = [
+        telegram.LabeledPrice(
+            product.product.name,
+            int(product.product.cost) * 100)
+        for product in shopping_cart
+    ]
+
+    update.callback_query.delete_message(
+    )
+    if user.is_wait:
+        context.bot.edit_message_text(
+            text=st.is_wait.format(user.code),
+            chat_id=chat_id,
+            message_id=update.callback_query.message.message_id,
+            parse_mode=telegram.ParseMode.MARKDOWN,
+        )
+    else:
+        send_pay(chat_id,
+                 title,
+                 description,
+                 payload,
+                 currency,
+                 prices,
+                 cost=sum_cost
+                 )
+
+
+def precheckout(update, context):
+    update.pre_checkout_query
+
+    print(context.chat_data)
+
+    pre_checkout_query(query=update.pre_checkout_query)
+
+
+def successful_payment_callback(update, context) -> None:
+    """Confirms the successful payment."""
+    # do something after successfully receiving payment?
+    update.message.reply_text("Thank you for your payment!")
 
 
 @handler_logging()
 def wait(update, context):
+    print('почемууу')
     user = User.get_user(update, context)
     user_id = extract_user_data_from_update(update)['user_id']
     numbers = [random.randint(0, 9) for i in range(4)]
     code = ''.join(str(number) for number in numbers)
     text = st.new_offer.format(code, user, products_in_card(user))
 
-    context.bot.edit_message_text(
+    send(
+        user_id=user_id,
         text=(
-            f'Ваш заказ номер {code} готовится. ' +
-            f'Ожидайте вы заказали: {products_in_card(user)}'),
-        chat_id=user_id,
-        message_id=update.callback_query.message.message_id,
+            f'Ваш заказ номер {code} готовится. '
+            + f'Ожидайте вы заказали: {products_in_card(user)}'),
         # reply_markup=kb.checkout_buttons(n_cols=2),
         parse_mode=telegram.ParseMode.MARKDOWN,
     )

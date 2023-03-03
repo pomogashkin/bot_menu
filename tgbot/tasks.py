@@ -3,6 +3,7 @@
 """
 
 import datetime
+from tgbot.handlers.keyboard_utils import checkout_buttons
 import telegram
 import time
 import os
@@ -21,7 +22,7 @@ from tgbot.models import (
     Arcgis,
     User
 )
-from dtb.settings import TELEGRAM_TOKEN
+from dtb.settings import TELEGRAM_TOKEN, BANK_TOKEN
 import tgbot.handlers.manage_data as md
 
 moders_m_id = []
@@ -113,3 +114,47 @@ def send_afisha(user_id):
             media=file_id, caption="Меню №" + str(number + 1)))
 
     send(user_id=user_id, media=media)
+
+
+@app.task(ignore_result=True)
+def send_pay(chat_id,
+             title,
+             description,
+             payload,
+             currency,
+             prices,
+             cost,
+             provider_token=BANK_TOKEN,
+             sleep_between=0.4):
+    print('??')
+    bot = telegram.Bot(TELEGRAM_TOKEN)
+    try:
+        bot.send_invoice(chat_id=chat_id,
+                         title=title,
+                         description=description,
+                         payload=payload,
+                         provider_token=provider_token,
+                         currency=currency, prices=prices,
+                         reply_markup=checkout_buttons(n_cols=1, cost=cost)
+                         )
+    except Exception as e:
+        print(f"Failed to send message to {chat_id}, reason: {e}")
+    time.sleep(max(sleep_between, 0.1))
+
+
+def pre_checkout_query(query, sleep_between=0.4):
+    bot = telegram.Bot(TELEGRAM_TOKEN)
+    try:
+        if query.invoice_payload != "Custom-Payload":
+            print('???')
+            bot.answer_pre_checkout_query(
+                ok=False,
+                error_message="Something went wrong...",
+                pre_checkout_query_id=query.id,
+            )
+        else:
+            bot.answer_pre_checkout_query(
+                ok=True, pre_checkout_query_id=query.id)
+    except Exception as e:
+        print(f"Failed to send message to , reason: {e}")
+    time.sleep(max(sleep_between, 0.1))
